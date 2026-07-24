@@ -168,16 +168,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper function to format numbers cleanly (hides unnecessary trailing decimals)
+# Helper function to format numbers cleanly as whole integers (no decimals)
 def fmt_num(val):
     if pd.isna(val):
         return "0"
     try:
         f_val = float(val)
-        if f_val.is_integer():
-            return f"{int(f_val):,}"
-        else:
-            return f"{f_val:,.1f}"
+        return f"{int(round(f_val)):,}"
     except (ValueError, TypeError):
         return str(val)
 
@@ -444,7 +441,7 @@ def main():
                 <span class="kpi-title">Target Fulfillment</span>
                 <div class="kpi-icon icon-rate">🎯</div>
             </div>
-            <div class="kpi-value">{fulfillment_rate:.1f}%</div>
+            <div class="kpi-value">{int(round(fulfillment_rate))}%</div>
             <div class="kpi-subtext">Actual vs Awarded Target</div>
         </div>
         """, unsafe_allow_html=True)
@@ -491,7 +488,7 @@ def main():
             text=[fmt_num(v) for v in df_monthly_comp['Award Target']],
             textposition='outside',
             textfont=dict(size=12, weight='bold', color='#1E40AF'),
-            hovertemplate="<b>%{x}</b><br>Target: %{y:.1f} TEUs<extra></extra>"
+            hovertemplate="<b>%{x}</b><br>Target: %{y:.0f} TEUs<extra></extra>"
         ))
         
         fig_monthly.add_trace(go.Bar(
@@ -502,7 +499,7 @@ def main():
             text=[fmt_num(v) for v in df_monthly_comp['Actual Volume']],
             textposition='outside',
             textfont=dict(size=12, weight='bold', color='#065F46'),
-            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1f} TEUs<extra></extra>"
+            hovertemplate="<b>%{x}</b><br>Actual: %{y:.0f} TEUs<extra></extra>"
         ))
         
         fig_monthly.add_trace(go.Bar(
@@ -513,7 +510,7 @@ def main():
             text=[fmt_num(v) for v in df_monthly_comp['Spot Volume']],
             textposition='outside',
             textfont=dict(size=12, weight='bold', color='#92400E'),
-            hovertemplate="<b>%{x}</b><br>Spot: %{y:.1f} TEUs<extra></extra>"
+            hovertemplate="<b>%{x}</b><br>Spot: %{y:.0f} TEUs<extra></extra>"
         ))
         
         fig_monthly.update_layout(
@@ -541,10 +538,10 @@ def main():
             
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
-                value=fulfillment_rate,
-                number={'suffix': "%", 'font': {'size': 36, 'family': 'Plus Jakarta Sans', 'weight': 'bold'}},
+                value=round(fulfillment_rate),
+                number={'suffix': "%", 'valueformat': '.0f', 'font': {'size': 36, 'family': 'Plus Jakarta Sans', 'weight': 'bold'}},
                 title={'text': f"Target Fulfillment ({origin_label})", 'font': {'size': 13, 'color': '#64748B'}},
-                delta={'reference': 100, 'relative': False, 'valueformat': '.1f'},
+                delta={'reference': 100, 'relative': False, 'valueformat': '.0f'},
                 gauge={
                     'axis': {'range': [None, max(150, fulfillment_rate * 1.1)], 'tickwidth': 1},
                     'bar': {'color': "#0F172A"},

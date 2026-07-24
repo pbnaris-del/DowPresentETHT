@@ -531,6 +531,7 @@ def main():
             st.plotly_chart(fig_monthly, width='stretch')
 
         with c2:
+            st.markdown('<div style="margin-top: 5px;"></div>', unsafe_allow_html=True)
             st.markdown("#### Fulfillment Gauge & Top Trade Lanes")
             
             # Gauge Chart for Fulfillment Rate
@@ -556,11 +557,14 @@ def main():
             
             fig_gauge.update_layout(
                 height=220,
-                margin=dict(l=20, r=20, t=30, b=10),
+                margin=dict(l=20, r=20, t=35, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif")
             )
             st.plotly_chart(fig_gauge, width='stretch')
+
+            # Spacer gap between Gauge and Top Trade Lanes chart
+            st.markdown('<div style="margin-top: 25px;"></div>', unsafe_allow_html=True)
 
             # Top Trade Lanes Bar Chart
             df_trade_a = df_a_filtered.copy()
@@ -598,8 +602,8 @@ def main():
                 font=dict(family="Plus Jakarta Sans, sans-serif"),
                 xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title=None),
                 yaxis=dict(autorange="reversed"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
-                margin=dict(l=10, r=10, t=30, b=10)
+                legend=dict(orientation="h", yanchor="bottom", y=1.08, xanchor="right", x=1),
+                margin=dict(l=10, r=10, t=35, b=10)
             )
             st.plotly_chart(fig_trade, width='stretch')
 

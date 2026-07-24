@@ -462,84 +462,88 @@ def main():
     # TAB 1: Comparative Performance
     # ----------------------------------------------------
     with tab1:
-        c1, c2 = st.columns([7, 5])
+        # 1. Full-Width Row: Monthly Volume Progression
+        st.markdown("#### 📊 Monthly Volume Progression & Forecast Target (Awarded vs Actual vs Spot)")
         
-        with c1:
-            st.markdown("#### Monthly Volume Progression & Forecast Target")
+        monthly_data = []
+        monthly_award_target_overall = award_target_volume / len(valid_active_m_a) if valid_active_m_a else 0
+        
+        for m in valid_active_m_a:
+            act_m = pd.to_numeric(df_a_filtered[m], errors='coerce').fillna(0).sum()
+            spot_m = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum() if m in df_s_filtered.columns else 0
             
-            monthly_data = []
-            monthly_award_target_overall = award_target_volume / len(valid_active_m_a) if valid_active_m_a else 0
+            monthly_data.append({
+                'Month': m,
+                'Award Target': monthly_award_target_overall,
+                'Actual Volume': act_m,
+                'Spot Volume': spot_m
+            })
             
-            for m in valid_active_m_a:
-                act_m = pd.to_numeric(df_a_filtered[m], errors='coerce').fillna(0).sum()
-                spot_m = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum() if m in df_s_filtered.columns else 0
-                
-                monthly_data.append({
-                    'Month': m,
-                    'Award Target': monthly_award_target_overall,
-                    'Actual Volume': act_m,
-                    'Spot Volume': spot_m
-                })
-                
-            df_monthly_comp = pd.DataFrame(monthly_data)
-            
-            fig_monthly = go.Figure()
-            
-            fig_monthly.add_trace(go.Bar(
-                x=df_monthly_comp['Month'],
-                y=df_monthly_comp['Award Target'],
-                name='Award Target (Allocated)',
-                marker=dict(color='#3B82F6', cornerradius=4),
-                text=[fmt_num(v) for v in df_monthly_comp['Award Target']],
-                textposition='outside',
-                hovertemplate="<b>%{x}</b><br>Target: %{y:.1f} TEUs<extra></extra>"
-            ))
-            
-            fig_monthly.add_trace(go.Bar(
-                x=df_monthly_comp['Month'],
-                y=df_monthly_comp['Actual Volume'],
-                name='Actual Volume Shipped',
-                marker=dict(color='#10B981', cornerradius=4),
-                text=[fmt_num(v) for v in df_monthly_comp['Actual Volume']],
-                textposition='outside',
-                hovertemplate="<b>%{x}</b><br>Actual: %{y:.1f} TEUs<extra></extra>"
-            ))
-            
-            fig_monthly.add_trace(go.Bar(
-                x=df_monthly_comp['Month'],
-                y=df_monthly_comp['Spot Volume'],
-                name='Spot Volume',
-                marker=dict(color='#F59E0B', cornerradius=4),
-                text=[fmt_num(v) for v in df_monthly_comp['Spot Volume']],
-                textposition='outside',
-                hovertemplate="<b>%{x}</b><br>Spot: %{y:.1f} TEUs<extra></extra>"
-            ))
-            
-            fig_monthly.update_layout(
-                barmode='group',
-                bargap=0.25,
-                bargroupgap=0.1,
-                font=dict(family="Plus Jakarta Sans, sans-serif"),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                xaxis=dict(showgrid=False, title=None),
-                yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)'),
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
-                height=420,
-                margin=dict(l=20, r=20, t=50, b=20)
-            )
-            st.plotly_chart(fig_monthly, width='stretch')
+        df_monthly_comp = pd.DataFrame(monthly_data)
+        
+        fig_monthly = go.Figure()
+        
+        fig_monthly.add_trace(go.Bar(
+            x=df_monthly_comp['Month'],
+            y=df_monthly_comp['Award Target'],
+            name='Award Target (Allocated)',
+            marker=dict(color='#3B82F6', cornerradius=5),
+            text=[fmt_num(v) for v in df_monthly_comp['Award Target']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#1E40AF'),
+            hovertemplate="<b>%{x}</b><br>Target: %{y:.1f} TEUs<extra></extra>"
+        ))
+        
+        fig_monthly.add_trace(go.Bar(
+            x=df_monthly_comp['Month'],
+            y=df_monthly_comp['Actual Volume'],
+            name='Actual Volume Shipped',
+            marker=dict(color='#10B981', cornerradius=5),
+            text=[fmt_num(v) for v in df_monthly_comp['Actual Volume']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#065F46'),
+            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1f} TEUs<extra></extra>"
+        ))
+        
+        fig_monthly.add_trace(go.Bar(
+            x=df_monthly_comp['Month'],
+            y=df_monthly_comp['Spot Volume'],
+            name='Spot Volume',
+            marker=dict(color='#F59E0B', cornerradius=5),
+            text=[fmt_num(v) for v in df_monthly_comp['Spot Volume']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#92400E'),
+            hovertemplate="<b>%{x}</b><br>Spot: %{y:.1f} TEUs<extra></extra>"
+        ))
+        
+        fig_monthly.update_layout(
+            barmode='group',
+            bargap=0.2,
+            bargroupgap=0.08,
+            font=dict(family="Plus Jakarta Sans, sans-serif"),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=False, title=None, tickfont=dict(size=13, weight='bold')),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(size=12)),
+            height=430,
+            margin=dict(l=20, r=20, t=45, b=20)
+        )
+        st.plotly_chart(fig_monthly, width='stretch')
 
-        with c2:
-            st.markdown('<div style="margin-top: 5px;"></div>', unsafe_allow_html=True)
-            st.markdown("#### Fulfillment Gauge & Top Trade Lanes")
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+
+        # 2. Row 2: Target Gauge + Top Trade Lanes Bar Chart
+        r2_col1, r2_col2 = st.columns([4, 8])
+        
+        with r2_col1:
+            st.markdown("#### 🎯 Fulfillment Rate Gauge")
             
-            # Gauge Chart for Fulfillment Rate
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=fulfillment_rate,
-                number={'suffix': "%", 'font': {'size': 32, 'family': 'Plus Jakarta Sans'}},
-                title={'text': f"Fulfillment Rate % ({origin_label})", 'font': {'size': 13, 'color': '#64748B'}},
+                number={'suffix': "%", 'font': {'size': 36, 'family': 'Plus Jakarta Sans', 'weight': 'bold'}},
+                title={'text': f"Target Fulfillment ({origin_label})", 'font': {'size': 13, 'color': '#64748B'}},
                 delta={'reference': 100, 'relative': False, 'valueformat': '.1f'},
                 gauge={
                     'axis': {'range': [None, max(150, fulfillment_rate * 1.1)], 'tickwidth': 1},
@@ -556,54 +560,59 @@ def main():
             ))
             
             fig_gauge.update_layout(
-                height=220,
-                margin=dict(l=20, r=20, t=35, b=10),
+                height=300,
+                margin=dict(l=20, r=20, t=30, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif")
             )
             st.plotly_chart(fig_gauge, width='stretch')
 
-            # Spacer gap between Gauge and Top Trade Lanes chart
-            st.markdown('<div style="margin-top: 25px;"></div>', unsafe_allow_html=True)
-
-            # Top Trade Lanes Bar Chart
+        with r2_col2:
+            st.markdown("#### 🛣️ Top Destination Trade Lanes Performance (Award Target vs Actual)")
+            
             df_trade_a = df_a_filtered.copy()
             df_trade_a['Actual_Vol'] = df_trade_a[valid_active_m_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1)
             df_trade_a['Award_Allocated'] = pd.to_numeric(df_trade_a[col_eway_teu_a], errors='coerce').fillna(0) * month_factor
             
             trade_grouped = df_trade_a.groupby(col_dest_a)[['Award_Allocated', 'Actual_Vol']].sum().reset_index()
-            trade_grouped = trade_grouped.sort_values(by='Award_Allocated', ascending=False).head(5)
+            trade_grouped = trade_grouped.sort_values(by='Award_Allocated', ascending=False).head(7)
             
             fig_trade = go.Figure()
+            
             fig_trade.add_trace(go.Bar(
                 y=trade_grouped[col_dest_a],
                 x=trade_grouped['Award_Allocated'],
                 name='Award Target',
                 orientation='h',
-                marker=dict(color='#93C5FD', cornerradius=3),
+                marker=dict(color='#93C5FD', cornerradius=4),
                 text=[fmt_num(v) for v in trade_grouped['Award_Allocated']],
-                textposition='auto'
+                textposition='outside',
+                textfont=dict(size=12, weight='bold', color='#1E40AF')
             ))
+            
             fig_trade.add_trace(go.Bar(
                 y=trade_grouped[col_dest_a],
                 x=trade_grouped['Actual_Vol'],
-                name='Actual Volume',
+                name='Actual Volume Shipped',
                 orientation='h',
-                marker=dict(color='#059669', cornerradius=3),
+                marker=dict(color='#059669', cornerradius=4),
                 text=[fmt_num(v) for v in trade_grouped['Actual_Vol']],
-                textposition='auto'
+                textposition='outside',
+                textfont=dict(size=12, weight='bold', color='#065F46')
             ))
             
             fig_trade.update_layout(
                 barmode='group',
-                height=220,
+                bargap=0.2,
+                bargroupgap=0.1,
+                height=300,
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif"),
-                xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title=None),
-                yaxis=dict(autorange="reversed"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.08, xanchor="right", x=1),
-                margin=dict(l=10, r=10, t=35, b=10)
+                xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)'),
+                yaxis=dict(autorange="reversed", tickfont=dict(size=12, weight='bold')),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
+                margin=dict(l=10, r=40, t=30, b=10)
             )
             st.plotly_chart(fig_trade, width='stretch')
 
@@ -611,64 +620,71 @@ def main():
     # TAB 2: Spot & Hierarchy Analysis
     # ----------------------------------------------------
     with tab2:
-        s_col1, s_col2 = st.columns([6, 6])
+        # Full-Width Spot Trend Row
+        st.markdown(f"#### ⚡ Monthly Spot Orders Volume Trend ({origin_label})")
         
-        with s_col1:
-            st.markdown(f"#### Monthly Spot Orders Trend ({origin_label})")
+        spot_trend = []
+        for m in valid_active_m_s:
+            v = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum()
+            spot_trend.append({'Month': m, 'Spot Volume': v, 'Label': fmt_num(v)})
             
-            spot_trend = []
-            for m in valid_active_m_s:
-                v = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum()
-                spot_trend.append({'Month': m, 'Spot Volume': v})
-                
-            df_spot_trend = pd.DataFrame(spot_trend)
-            
-            fig_spot_area = px.area(
-                df_spot_trend,
-                x='Month',
-                y='Spot Volume',
-                markers=True,
-                color_discrete_sequence=['#F59E0B']
-            )
-            fig_spot_area.update_traces(
-                line=dict(width=3, shape='spline'),
-                fillcolor='rgba(245, 158, 11, 0.15)',
-                marker=dict(size=8, color='#D97706')
-            )
-            fig_spot_area.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Plus Jakarta Sans, sans-serif"),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='TEUs'),
-                height=380,
-                margin=dict(l=20, r=20, t=30, b=20)
-            )
-            st.plotly_chart(fig_spot_area, width='stretch')
+        df_spot_trend = pd.DataFrame(spot_trend)
+        
+        fig_spot_area = px.area(
+            df_spot_trend,
+            x='Month',
+            y='Spot Volume',
+            markers=True,
+            color_discrete_sequence=['#F59E0B'],
+            text='Label'
+        )
+        fig_spot_area.update_traces(
+            line=dict(width=4, shape='spline'),
+            fillcolor='rgba(245, 158, 11, 0.15)',
+            marker=dict(size=10, color='#D97706'),
+            textposition='top center',
+            textfont=dict(size=13, weight='bold', color='#92400E')
+        )
+        fig_spot_area.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Plus Jakarta Sans, sans-serif"),
+            xaxis=dict(showgrid=False, tickfont=dict(size=13, weight='bold')),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Spot Volume (TEUs)'),
+            height=380,
+            margin=dict(l=20, r=20, t=30, b=20)
+        )
+        st.plotly_chart(fig_spot_area, width='stretch')
 
-        with s_col2:
-            st.markdown("#### Trade Lane Volume Hierarchy (Sunburst)")
-            
-            df_sun = df_a_filtered.copy()
-            df_sun['Volume'] = df_sun[valid_active_m_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1)
-            df_sun = df_sun[df_sun['Volume'] > 0]
-            
-            if not df_sun.empty:
-                fig_sun = px.sunburst(
-                    df_sun,
-                    path=[col_plant_a, col_dest_a, col_dest_port_a],
-                    values='Volume',
-                    color_discrete_sequence=px.colors.qualitative.Prism
-                )
-                fig_sun.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(family="Plus Jakarta Sans, sans-serif"),
-                    height=380,
-                    margin=dict(l=10, r=10, t=20, b=10)
-                )
-                st.plotly_chart(fig_sun, width='stretch')
-            else:
-                st.info("No active volume recorded for selected filters to build hierarchy.")
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+
+        # Full-Width Hierarchy Row
+        st.markdown("#### 🌳 Trade Lane Volume Hierarchy & Breakdown (Sunburst)")
+        
+        df_sun = df_a_filtered.copy()
+        df_sun['Volume'] = df_sun[valid_active_m_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1)
+        df_sun = df_sun[df_sun['Volume'] > 0]
+        
+        if not df_sun.empty:
+            fig_sun = px.sunburst(
+                df_sun,
+                path=[col_plant_a, col_dest_a, col_dest_port_a],
+                values='Volume',
+                color_discrete_sequence=px.colors.qualitative.Prism
+            )
+            fig_sun.update_traces(
+                textinfo="label+value+percent entry",
+                insidetextorientation='horizontal'
+            )
+            fig_sun.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Plus Jakarta Sans, sans-serif"),
+                height=450,
+                margin=dict(l=10, r=10, t=20, b=10)
+            )
+            st.plotly_chart(fig_sun, width='stretch')
+        else:
+            st.info("No active volume recorded for selected filters to build hierarchy.")
 
     # ----------------------------------------------------
     # TAB 3: Detailed Matrix & Data Tables

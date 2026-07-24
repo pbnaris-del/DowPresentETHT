@@ -478,6 +478,14 @@ def main():
             
         df_monthly_comp = pd.DataFrame(monthly_data)
         
+        # Calculate Y-axis headroom to prevent top label overlap
+        max_m_val = max(
+            df_monthly_comp['Award Target'].max() if not df_monthly_comp.empty else 100,
+            df_monthly_comp['Actual Volume'].max() if not df_monthly_comp.empty else 100,
+            df_monthly_comp['Spot Volume'].max() if not df_monthly_comp.empty else 100
+        )
+        y_max_m = max(180, float(max_m_val) * 1.25)
+        
         fig_monthly = go.Figure()
         
         fig_monthly.add_trace(go.Bar(
@@ -521,12 +529,12 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             xaxis=dict(showgrid=False, title=None, tickfont=dict(size=13, weight='bold')),
-            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)'),
-            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(size=12)),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)', range=[0, y_max_m]),
+            legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
             height=430,
-            margin=dict(l=20, r=20, t=45, b=20)
+            margin=dict(l=20, r=20, t=55, b=20)
         )
-        st.plotly_chart(fig_monthly, width='stretch')
+        st.plotly_chart(fig_monthly, width='stretch', config={'displayModeBar': False})
 
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 
@@ -543,7 +551,7 @@ def main():
                 number={'suffix': "%", 'valueformat': '.0f', 'font': {'size': 36, 'family': 'Plus Jakarta Sans', 'weight': 'bold'}},
                 delta={'reference': 100, 'relative': False, 'valueformat': '.0f'},
                 gauge={
-                    'axis': {'range': [None, max(150, fulfillment_rate * 1.1)], 'tickwidth': 1},
+                    'axis': {'range': [None, max(150, round(fulfillment_rate * 1.15))], 'tickwidth': 1},
                     'bar': {'color': "#0F172A"},
                     'bgcolor': "white",
                     'borderwidth': 1,
@@ -551,7 +559,7 @@ def main():
                     'steps': [
                         {'range': [0, 80], 'color': '#FEE2E2'},
                         {'range': [80, 100], 'color': '#FEF3C7'},
-                        {'range': [100, max(150, fulfillment_rate * 1.1)], 'color': '#D1FAE5'}
+                        {'range': [100, max(150, round(fulfillment_rate * 1.15))], 'color': '#D1FAE5'}
                     ]
                 }
             ))
@@ -562,7 +570,7 @@ def main():
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif")
             )
-            st.plotly_chart(fig_gauge, width='stretch')
+            st.plotly_chart(fig_gauge, width='stretch', config={'displayModeBar': False})
 
         with r2_col2:
             st.markdown("#### 🛣️ Top Destination Trade Lanes Performance (Award Target vs Actual)")
@@ -573,6 +581,13 @@ def main():
             
             trade_grouped = df_trade_a.groupby(col_dest_a)[['Award_Allocated', 'Actual_Vol']].sum().reset_index()
             trade_grouped = trade_grouped.sort_values(by='Award_Allocated', ascending=False).head(7)
+            
+            # Calculate X-axis headroom to prevent right label cutoff
+            max_t_val = max(
+                trade_grouped['Award_Allocated'].max() if not trade_grouped.empty else 100,
+                trade_grouped['Actual_Vol'].max() if not trade_grouped.empty else 100
+            )
+            x_max_t = max(200, float(max_t_val) * 1.25)
             
             fig_trade = go.Figure()
             
@@ -606,12 +621,12 @@ def main():
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif"),
-                xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)'),
+                xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)', range=[0, x_max_t]),
                 yaxis=dict(autorange="reversed", tickfont=dict(size=12, weight='bold')),
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
-                margin=dict(l=10, r=40, t=30, b=10)
+                legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
+                margin=dict(l=10, r=50, t=45, b=10)
             )
-            st.plotly_chart(fig_trade, width='stretch')
+            st.plotly_chart(fig_trade, width='stretch', config={'displayModeBar': False})
 
     # ----------------------------------------------------
     # TAB 2: Spot & Hierarchy Analysis
@@ -626,6 +641,9 @@ def main():
             spot_trend.append({'Month': m, 'Spot Volume': v, 'Label': fmt_num(v)})
             
         df_spot_trend = pd.DataFrame(spot_trend)
+        
+        max_s_val = df_spot_trend['Spot Volume'].max() if not df_spot_trend.empty else 100
+        y_max_s = max(120, float(max_s_val) * 1.3)
         
         fig_spot_area = px.area(
             df_spot_trend,
@@ -647,11 +665,11 @@ def main():
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(family="Plus Jakarta Sans, sans-serif"),
             xaxis=dict(showgrid=False, tickfont=dict(size=13, weight='bold')),
-            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Spot Volume (TEUs)'),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Spot Volume (TEUs)', range=[0, y_max_s]),
             height=380,
-            margin=dict(l=20, r=20, t=30, b=20)
+            margin=dict(l=20, r=20, t=45, b=20)
         )
-        st.plotly_chart(fig_spot_area, width='stretch')
+        st.plotly_chart(fig_spot_area, width='stretch', config={'displayModeBar': False})
 
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 
@@ -679,7 +697,7 @@ def main():
                 height=450,
                 margin=dict(l=10, r=10, t=20, b=10)
             )
-            st.plotly_chart(fig_sun, width='stretch')
+            st.plotly_chart(fig_sun, width='stretch', config={'displayModeBar': False})
         else:
             st.info("No active volume recorded for selected filters to build hierarchy.")
 

@@ -534,13 +534,13 @@ def main():
         r2_col1, r2_col2 = st.columns([4, 8])
         
         with r2_col1:
-            st.markdown("#### 🎯 Fulfillment Rate Gauge")
+            st.markdown("#### 🎯 Target Fulfillment Rate Gauge")
+            st.markdown(f'<div style="font-size: 0.85rem; color: #64748B; margin-top: -6px; margin-bottom: 8px;">Scope: <b>{origin_label}</b></div>', unsafe_allow_html=True)
             
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=round(fulfillment_rate),
                 number={'suffix': "%", 'valueformat': '.0f', 'font': {'size': 36, 'family': 'Plus Jakarta Sans', 'weight': 'bold'}},
-                title={'text': f"Target Fulfillment ({origin_label})", 'font': {'size': 13, 'color': '#64748B'}},
                 delta={'reference': 100, 'relative': False, 'valueformat': '.0f'},
                 gauge={
                     'axis': {'range': [None, max(150, fulfillment_rate * 1.1)], 'tickwidth': 1},
@@ -557,8 +557,8 @@ def main():
             ))
             
             fig_gauge.update_layout(
-                height=300,
-                margin=dict(l=20, r=20, t=30, b=10),
+                height=260,
+                margin=dict(l=20, r=20, t=10, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Plus Jakarta Sans, sans-serif")
             )

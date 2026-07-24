@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Premium CSS Styling (Executive Dark-Slate & Glassmorphism Aesthetics)
+# Custom Executive Styling
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -32,9 +32,9 @@ st.markdown("""
     .banner-container {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0284C7 100%);
         border-radius: 16px;
-        padding: 2rem 2.2rem;
+        padding: 1.8rem 2.2rem;
         color: white;
-        margin-bottom: 2rem;
+        margin-bottom: 1.8rem;
         box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
         position: relative;
         overflow: hidden;
@@ -52,9 +52,9 @@ st.markdown("""
     }
 
     .banner-subtitle {
-        font-size: 1rem;
+        font-size: 0.98rem;
         color: #94A3B8;
-        margin-top: 0.5rem;
+        margin-top: 0.4rem;
         font-weight: 400;
     }
 
@@ -70,7 +70,7 @@ st.markdown("""
         font-weight: 600;
         color: #E2E8F0;
         margin-right: 0.5rem;
-        margin-top: 1rem;
+        margin-top: 0.8rem;
     }
 
     /* Premium KPI Summary Cards */
@@ -168,7 +168,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper function for fuzzy column matching with error handling
+# Helper function to format numbers cleanly (hides unnecessary trailing decimals)
+def fmt_num(val):
+    if pd.isna(val):
+        return "0"
+    try:
+        f_val = float(val)
+        if f_val.is_integer():
+            return f"{int(f_val):,}"
+        else:
+            return f"{f_val:,.1f}"
+    except (ValueError, TypeError):
+        return str(val)
+
+# Helper function for fuzzy column matching
 def find_column(df_columns, target_name, fallback_idx=None):
     clean_target = target_name.lower().replace(' ', '').replace('-', '').replace('_', '')
     for col in df_columns:
@@ -184,7 +197,7 @@ def find_column(df_columns, target_name, fallback_idx=None):
         return df_columns[fallback_idx]
     return target_name
 
-# Cached Data Loader Function
+# Cached Data Loader
 @st.cache_data
 def load_data(file_path):
     if not os.path.exists(file_path):
@@ -276,6 +289,7 @@ def main():
         
     # Standardize Column Names via Fuzzy Matching
     col_region_a = find_column(df_a.columns, 'Supplying Region', 1)
+    col_country_a = find_column(df_a.columns, 'Shipping Country', 3)
     col_dest_a = find_column(df_a.columns, 'Destination Country', 6)
     col_dest_port_a = find_column(df_a.columns, 'Destination Port Name', 7)
     col_plant_a = find_column(df_a.columns, 'Plant Location', 2)
@@ -284,6 +298,7 @@ def main():
     col_eway_teu_a = find_column(df_a.columns, 'Eway Actual TEUs', 22)
     
     col_region_s = find_column(df_s.columns, 'Supplying Region', 1)
+    col_country_s = find_column(df_s.columns, 'Shipping Country', 4)
     col_dest_s = find_column(df_s.columns, 'Destination Country', 7)
     col_dest_port_s = find_column(df_s.columns, 'Destination Port Name', 8)
     col_plant_s = find_column(df_s.columns, 'Plant Location', 2)
@@ -295,7 +310,11 @@ def main():
     all_months = months_2025 + months_2026
 
     # Sidebar Filter Controls
-    st.sidebar.markdown("### ⚙️ Dashboard Controls")
+    st.sidebar.markdown("### ⚙️ Scope & Origin Filters")
+    
+    # Origin Scope Filter (Defaulting to Thailand as requested)
+    origin_options = ['Thailand Only (Laem Chabang / Rayong)', 'All Origins (Thailand, S.Korea, Saudi)']
+    selected_origin = st.sidebar.selectbox("Origin Location", options=origin_options, index=0)
     
     selected_client = st.sidebar.selectbox("Client Scope", options=['DOW', 'All Clients'], index=0)
     
@@ -321,16 +340,29 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔍 Trade Lane Filters")
     
-    dest_countries_a = sorted([str(x) for x in df_a[col_dest_a].dropna().unique() if str(x).strip() != 'nan'])
-    selected_destinations = st.sidebar.multiselect("Destination Country", options=dest_countries_a, default=[])
-    
-    perf_centers_a = sorted([str(x) for x in df_a[col_perf_a].dropna().unique() if str(x).strip() != 'nan'])
-    selected_perfs = st.sidebar.multiselect("Performance Center", options=perf_centers_a, default=[])
-
-    # Apply Filters
+    # Apply Origin Filter First
     df_a_filtered = df_a.copy()
     df_s_filtered = df_s.copy()
     
+    if selected_origin.startswith('Thailand'):
+        df_a_filtered = df_a_filtered[
+            (df_a_filtered[col_country_a].astype(str).str.upper() == 'THAILAND') |
+            (df_a_filtered[col_plant_a].astype(str).str.upper() == 'LAEM CHABANG')
+        ]
+        df_s_filtered = df_s_filtered[
+            (df_s_filtered[col_country_s].astype(str).str.upper() == 'THAILAND') |
+            (df_s_filtered[col_plant_s].astype(str).str.upper() == 'RAYONG')
+        ]
+        origin_label = "Thailand (Laem Chabang / Rayong)"
+    else:
+        origin_label = "All Global Origins"
+
+    dest_countries_a = sorted([str(x) for x in df_a_filtered[col_dest_a].dropna().unique() if str(x).strip() != 'nan'])
+    selected_destinations = st.sidebar.multiselect("Destination Country", options=dest_countries_a, default=[])
+    
+    perf_centers_a = sorted([str(x) for x in df_a_filtered[col_perf_a].dropna().unique() if str(x).strip() != 'nan'])
+    selected_perfs = st.sidebar.multiselect("Performance Center", options=perf_centers_a, default=[])
+
     if selected_destinations:
         df_a_filtered = df_a_filtered[df_a_filtered[col_dest_a].astype(str).isin(selected_destinations)]
         df_s_filtered = df_s_filtered[df_s_filtered[col_dest_s].astype(str).isin(selected_destinations)]
@@ -345,9 +377,10 @@ def main():
         <h1 class="banner-title">DOW Chemical Logistics Performance Dashboard</h1>
         <div class="banner-subtitle">Executive Volume Analytics & Trade Lane Fulfillment Intelligence</div>
         <div>
+            <span class="banner-badge">📍 Origin: <b>{origin_label}</b></span>
             <span class="banner-badge">🏢 Client: <b>{selected_client}</b></span>
             <span class="banner-badge">📅 Scope: <b>{target_year_label}</b></span>
-            <span class="banner-badge">📍 Active Lanes: <b>{len(df_a_filtered)} Contract Lanes</b></span>
+            <span class="banner-badge">🛣️ Active Lanes: <b>{len(df_a_filtered)} Contract Lanes</b></span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -375,7 +408,7 @@ def main():
                 <span class="kpi-title">Award Target</span>
                 <div class="kpi-icon icon-award">🏆</div>
             </div>
-            <div class="kpi-value">{award_target_volume:,.1f}</div>
+            <div class="kpi-value">{fmt_num(award_target_volume)}</div>
             <div class="kpi-subtext">Allocated TEUs ({target_year_label})</div>
         </div>
         """, unsafe_allow_html=True)
@@ -387,7 +420,7 @@ def main():
                 <span class="kpi-title">Actual Shipped</span>
                 <div class="kpi-icon icon-actual">🚚</div>
             </div>
-            <div class="kpi-value">{actual_volume:,.1f}</div>
+            <div class="kpi-value">{fmt_num(actual_volume)}</div>
             <div class="kpi-subtext">Awarded Lanes Volume ({target_year_label})</div>
         </div>
         """, unsafe_allow_html=True)
@@ -399,7 +432,7 @@ def main():
                 <span class="kpi-title">Spot Volume</span>
                 <div class="kpi-icon icon-spot">⚡</div>
             </div>
-            <div class="kpi-value">{spot_volume:,.1f}</div>
+            <div class="kpi-value">{fmt_num(spot_volume)}</div>
             <div class="kpi-subtext">Ad-hoc Orders ({target_year_label})</div>
         </div>
         """, unsafe_allow_html=True)
@@ -457,7 +490,7 @@ def main():
                 y=df_monthly_comp['Award Target'],
                 name='Award Target (Allocated)',
                 marker=dict(color='#3B82F6', cornerradius=4),
-                text=df_monthly_comp['Award Target'].round(1),
+                text=[fmt_num(v) for v in df_monthly_comp['Award Target']],
                 textposition='outside',
                 hovertemplate="<b>%{x}</b><br>Target: %{y:.1f} TEUs<extra></extra>"
             ))
@@ -467,7 +500,7 @@ def main():
                 y=df_monthly_comp['Actual Volume'],
                 name='Actual Volume Shipped',
                 marker=dict(color='#10B981', cornerradius=4),
-                text=df_monthly_comp['Actual Volume'].round(1),
+                text=[fmt_num(v) for v in df_monthly_comp['Actual Volume']],
                 textposition='outside',
                 hovertemplate="<b>%{x}</b><br>Actual: %{y:.1f} TEUs<extra></extra>"
             ))
@@ -477,7 +510,7 @@ def main():
                 y=df_monthly_comp['Spot Volume'],
                 name='Spot Volume',
                 marker=dict(color='#F59E0B', cornerradius=4),
-                text=df_monthly_comp['Spot Volume'].round(1),
+                text=[fmt_num(v) for v in df_monthly_comp['Spot Volume']],
                 textposition='outside',
                 hovertemplate="<b>%{x}</b><br>Spot: %{y:.1f} TEUs<extra></extra>"
             ))
@@ -505,7 +538,7 @@ def main():
                 mode="gauge+number+delta",
                 value=fulfillment_rate,
                 number={'suffix': "%", 'font': {'size': 32, 'family': 'Plus Jakarta Sans'}},
-                title={'text': "Target Fulfillment Rate %", 'font': {'size': 14, 'color': '#64748B'}},
+                title={'text': f"Fulfillment Rate % ({origin_label})", 'font': {'size': 13, 'color': '#64748B'}},
                 delta={'reference': 100, 'relative': False, 'valueformat': '.1f'},
                 gauge={
                     'axis': {'range': [None, max(150, fulfillment_rate * 1.1)], 'tickwidth': 1},
@@ -543,14 +576,18 @@ def main():
                 x=trade_grouped['Award_Allocated'],
                 name='Award Target',
                 orientation='h',
-                marker=dict(color='#93C5FD', cornerradius=3)
+                marker=dict(color='#93C5FD', cornerradius=3),
+                text=[fmt_num(v) for v in trade_grouped['Award_Allocated']],
+                textposition='auto'
             ))
             fig_trade.add_trace(go.Bar(
                 y=trade_grouped[col_dest_a],
                 x=trade_grouped['Actual_Vol'],
                 name='Actual Volume',
                 orientation='h',
-                marker=dict(color='#059669', cornerradius=3)
+                marker=dict(color='#059669', cornerradius=3),
+                text=[fmt_num(v) for v in trade_grouped['Actual_Vol']],
+                textposition='auto'
             ))
             
             fig_trade.update_layout(
@@ -573,7 +610,7 @@ def main():
         s_col1, s_col2 = st.columns([6, 6])
         
         with s_col1:
-            st.markdown("#### Monthly Spot Orders Trend Curve")
+            st.markdown(f"#### Monthly Spot Orders Trend ({origin_label})")
             
             spot_trend = []
             for m in valid_active_m_s:
@@ -615,7 +652,7 @@ def main():
             if not df_sun.empty:
                 fig_sun = px.sunburst(
                     df_sun,
-                    path=[col_region_a, col_dest_a, col_dest_port_a],
+                    path=[col_plant_a, col_dest_a, col_dest_port_a],
                     values='Volume',
                     color_discrete_sequence=px.colors.qualitative.Prism
                 )
@@ -633,8 +670,8 @@ def main():
     # TAB 3: Detailed Matrix & Data Tables
     # ----------------------------------------------------
     with tab3:
-        st.markdown("#### 📋 Awarded Lanes Detailed Contract Matrix")
-        display_cols_a = [col_plant_a, col_dest_a, col_dest_port_a, col_perf_a, col_forecast_a, col_eway_teu_a] + valid_active_m_a
+        st.markdown(f"#### 📋 Awarded Lanes Detailed Contract Matrix ({origin_label})")
+        display_cols_a = [col_plant_a, col_country_a, col_dest_a, col_dest_port_a, col_perf_a, col_forecast_a, col_eway_teu_a] + valid_active_m_a
         df_a_display = df_a_filtered[display_cols_a].copy()
         
         st.dataframe(
@@ -646,13 +683,13 @@ def main():
         st.download_button(
             label="📥 Export Awarded Lanes Data (CSV)",
             data=df_a_display.to_csv(index=False).encode('utf-8'),
-            file_name=f"DOW_Awarded_Lanes_{target_year_label}.csv",
+            file_name=f"DOW_Awarded_Lanes_Thailand_{target_year_label}.csv",
             mime="text/csv"
         )
         
         st.markdown("---")
-        st.markdown("#### ⚡ Spot Orders Detailed Matrix")
-        display_cols_s = [col_plant_s, col_dest_s, col_dest_port_s, col_perf_s] + valid_active_m_s
+        st.markdown(f"#### ⚡ Spot Orders Detailed Matrix ({origin_label})")
+        display_cols_s = [col_plant_s, col_country_s, col_dest_s, col_dest_port_s, col_perf_s] + valid_active_m_s
         df_s_display = df_s_filtered[display_cols_s].copy()
         
         st.dataframe(
@@ -664,7 +701,7 @@ def main():
         st.download_button(
             label="📥 Export Spot Orders Data (CSV)",
             data=df_s_display.to_csv(index=False).encode('utf-8'),
-            file_name=f"DOW_Spot_Orders_{target_year_label}.csv",
+            file_name=f"DOW_Spot_Orders_Thailand_{target_year_label}.csv",
             mime="text/csv"
         )
 

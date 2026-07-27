@@ -325,7 +325,7 @@ def main():
             '2026 YTD (Current Year)', 
             '2025 (Jul - Dec)', 
             'Current Contract (2025-2026)',
-            '📜 Historical Bidding (2024-2025)',
+            '📜 Historical Contract (2024-2025)',
             '🌐 Full Multi-Year Horizon (2024-2026)'
         ],
         index=0
@@ -343,9 +343,9 @@ def main():
         active_months = months_2025_2026
         target_year_label = "2025-2026"
         month_factor = 1.0
-    elif selected_horizon == '📜 Historical Bidding (2024-2025)':
+    elif selected_horizon == '📜 Historical Contract (2024-2025)':
         active_months = months_2024_2025
-        target_year_label = "2024-2025 Bidding"
+        target_year_label = "2024-2025 Contract"
         month_factor = 10.0 / 12.0
     else:
         active_months = all_historical_months
@@ -470,7 +470,7 @@ def main():
     tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Comparative Performance", 
         "⚡ Spot & Hierarchy Analysis", 
-        "📜 Multi-Year Bidding Analysis (2024-2026)",
+        "📜 Multi-Year Contract Analysis (2024-2026)",
         "📋 Trade Lane Matrix & Data"
     ])
 
@@ -724,13 +724,13 @@ def main():
             st.info("No active volume recorded for selected filters to build hierarchy.")
 
     # ----------------------------------------------------
-    # TAB 3: Multi-Year Bidding Analysis (2024-2026)
+    # TAB 3: Multi-Year Contract Analysis (2024-2026)
     # ----------------------------------------------------
     with tab3:
-        st.markdown(f"#### 📜 Historical Bidding vs Current Contract Performance Comparison ({origin_label})")
-        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative analysis of previous bidding cycle (Sep 2024 - Jun 2025) vs current contract cycle (Jul 2025 - Jun 2026).</div>", unsafe_allow_html=True)
+        st.markdown(f"#### 📜 Historical Contract vs Current Contract Performance Comparison ({origin_label})")
+        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative analysis of previous contract cycle (Sep 2024 - Jun 2025) vs current contract cycle (Jul 2025 - Jun 2026).</div>", unsafe_allow_html=True)
 
-        # Calculate Bidding Cycle Volumes
+        # Calculate Contract Cycle Volumes
         valid_m_2425 = [m for m in months_2024_2025 if m in df_a_filtered.columns]
         valid_m_2526 = [m for m in months_2025_2026 if m in df_a_filtered.columns]
 
@@ -744,7 +744,7 @@ def main():
         with mcol1:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-header"><span class="kpi-title">2024-2025 Bidding</span><div class="kpi-icon icon-award">📜</div></div>
+                <div class="kpi-header"><span class="kpi-title">2024-2025 Contract</span><div class="kpi-icon icon-award">📜</div></div>
                 <div class="kpi-value">{fmt_num(vol_2425_tot)}</div>
                 <div class="kpi-subtext">Historical Actual Shipped (TEUs)</div>
             </div>
@@ -773,7 +773,7 @@ def main():
         with mcol4:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-header"><span class="kpi-title">Bidding Growth Rate</span><div class="kpi-icon icon-rate">🚀</div></div>
+                <div class="kpi-header"><span class="kpi-title">Contract Growth Rate</span><div class="kpi-icon icon-rate">🚀</div></div>
                 <div class="kpi-value">{int(round(growth_pct))}%</div>
                 <div class="kpi-subtext">Year-over-Year Expansion</div>
             </div>
@@ -781,7 +781,7 @@ def main():
 
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 
-        # Multi-Year Chart Row: Destination Trade Lane Bidding Growth
+        # Multi-Year Chart Row: Destination Trade Lane Contract Growth
         df_my_dest = df_a_filtered.copy()
         df_my_dest['Vol_2425'] = df_my_dest[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2425 else 0
         df_my_dest['Vol_2526'] = df_my_dest[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2526 else 0
@@ -799,7 +799,7 @@ def main():
         fig_my_bar.add_trace(go.Bar(
             y=dest_my_grouped[col_dest_a],
             x=dest_my_grouped['Vol_2425'],
-            name='2024-2025 Bidding Volume',
+            name='2024-2025 Contract Volume',
             orientation='h',
             marker=dict(color='#94A3B8', cornerradius=4),
             text=[fmt_num(v) for v in dest_my_grouped['Vol_2425']],
@@ -825,7 +825,7 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(family="Plus Jakarta Sans, sans-serif"),
-            title=dict(text="<b>Trade Lane Performance Comparison: 2024-2025 Bidding vs 2025-2026 Contract</b>", font=dict(size=15, color="#0F172A")),
+            title=dict(text="<b>Trade Lane Performance Comparison: 2024-2025 Contract vs 2025-2026 Contract</b>", font=dict(size=15, color="#0F172A")),
             xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Actual Shipped Volume (TEUs)', range=[0, x_max_my]),
             yaxis=dict(autorange="reversed", tickfont=dict(size=12, weight='bold')),
             legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),

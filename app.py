@@ -302,6 +302,8 @@ def main():
     col_dest_port_s = find_column(df_s.columns, 'Destination Port Name', 8)
     col_plant_s = find_column(df_s.columns, 'Plant Location', 2)
     col_perf_s = find_column(df_s.columns, 'Perf Center', 12)
+    col_port_s = find_column(df_s.columns, 'Shipping Port Name', 5)
+    col_prep_s = find_column(df_s.columns, 'Prep Cost Region', 18)
 
     # Monthly Definitions (July to June Contract Cycle)
     months_2024_2025 = ['Jul 24', 'Aug 24', 'Sep 24', 'Oct 24', 'Nov 24', 'Dec 24', 'Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25']
@@ -365,7 +367,9 @@ def main():
         ]
         df_s_filtered = df_s_filtered[
             (df_s_filtered[col_country_s].astype(str).str.upper() == 'THAILAND') |
-            (df_s_filtered[col_plant_s].astype(str).str.upper() == 'RAYONG')
+            (df_s_filtered[col_plant_s].astype(str).str.upper() == 'RAYONG') |
+            (df_s_filtered[col_port_s].astype(str).str.upper() == 'LAEM CHABANG') |
+            (df_s_filtered[col_prep_s].astype(str).str.upper() == 'THAILAND')
         ]
         origin_label = "Thailand (Laem Chabang / Rayong)"
     else:
@@ -727,14 +731,23 @@ def main():
     # ----------------------------------------------------
     with tab3:
         st.markdown(f"#### 📜 Contract Year Performance Comparison: Jul-Jun Cycle ({origin_label})")
-        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative volume performance across 12-Month Contract Cycles (July to June): <b>Contract Year 2024-2025</b> vs <b>Contract Year 2025-2026</b>.</div>", unsafe_allow_html=True)
+        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative volume performance across 12-Month Contract Cycles (July to June): <b>Contract Year 2024-2025</b> vs <b>Contract Year 2025-2026</b> (Awarded + Spot Orders).</div>", unsafe_allow_html=True)
 
-        # Calculate Contract Cycle Volumes (July to June 12-Month Cycle)
-        valid_m_2425 = [m for m in months_2024_2025 if m in df_a_filtered.columns]
-        valid_m_2526 = [m for m in months_2025_2026 if m in df_a_filtered.columns]
+        # Calculate Contract Cycle Volumes (July to June 12-Month Cycle, Awarded + Spot)
+        valid_m_2425_a = [m for m in months_2024_2025 if m in df_a_filtered.columns]
+        valid_m_2526_a = [m for m in months_2025_2026 if m in df_a_filtered.columns]
+        valid_m_2425_s = [m for m in months_2024_2025 if m in df_s_filtered.columns]
+        valid_m_2526_s = [m for m in months_2025_2026 if m in df_s_filtered.columns]
 
-        vol_2425_tot = df_a_filtered[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2425 else 0
-        vol_2526_tot = df_a_filtered[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2526 else 0
+        award_2425 = df_a_filtered[valid_m_2425_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2425_a else 0
+        award_2526 = df_a_filtered[valid_m_2526_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2526_a else 0
+        
+        spot_2425 = df_s_filtered[valid_m_2425_s].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2425_s else 0
+        spot_2526 = df_s_filtered[valid_m_2526_s].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2526_s else 0
+
+        vol_2425_tot = award_2425 + spot_2425
+        vol_2526_tot = award_2526 + spot_2526
+        
         growth_vol = vol_2526_tot - vol_2425_tot
         growth_pct = (growth_vol / vol_2425_tot * 100) if vol_2425_tot > 0 else 0
 
@@ -745,7 +758,7 @@ def main():
             <div class="kpi-card">
                 <div class="kpi-header"><span class="kpi-title">Contract Year 24-25</span><div class="kpi-icon icon-award">📜</div></div>
                 <div class="kpi-value">{fmt_num(vol_2425_tot)}</div>
-                <div class="kpi-subtext">Jul 2024 - Jun 2025 (TEUs)</div>
+                <div class="kpi-subtext">{fmt_num(award_2425)} Awarded + {fmt_num(spot_2425)} Spot</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -754,7 +767,7 @@ def main():
             <div class="kpi-card">
                 <div class="kpi-header"><span class="kpi-title">Contract Year 25-26</span><div class="kpi-icon icon-actual">🚚</div></div>
                 <div class="kpi-value">{fmt_num(vol_2526_tot)}</div>
-                <div class="kpi-subtext">Jul 2025 - Jun 2026 (TEUs)</div>
+                <div class="kpi-subtext">{fmt_num(award_2526)} Awarded + {fmt_num(spot_2526)} Spot</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -765,7 +778,7 @@ def main():
             <div class="kpi-card">
                 <div class="kpi-header"><span class="kpi-title">Volume Growth</span><div class="kpi-icon icon-spot">📈</div></div>
                 <div class="kpi-value" style="color: {growth_color};">{growth_sign}{fmt_num(growth_vol)}</div>
-                <div class="kpi-subtext">TEU Volume Expansion ({growth_sign}{int(round(growth_pct))}%)</div>
+                <div class="kpi-subtext">Total Expansion ({growth_sign}{int(round(growth_pct))}%)</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -774,7 +787,7 @@ def main():
             <div class="kpi-card">
                 <div class="kpi-header"><span class="kpi-title">Contract YoY Growth</span><div class="kpi-icon icon-rate">🚀</div></div>
                 <div class="kpi-value">{int(round(growth_pct))}%</div>
-                <div class="kpi-subtext">Year-over-Year Expansion</div>
+                <div class="kpi-subtext">Year-over-Year Total Growth</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -790,14 +803,20 @@ def main():
             m24 = months_2024_2025[idx]
             m25 = months_2025_2026[idx]
             
-            v24 = pd.to_numeric(df_a_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_a_filtered.columns else 0
-            v25 = pd.to_numeric(df_a_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_a_filtered.columns else 0
+            a24 = pd.to_numeric(df_a_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_a_filtered.columns else 0
+            s24 = pd.to_numeric(df_s_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_s_filtered.columns else 0
+            
+            a25 = pd.to_numeric(df_a_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_a_filtered.columns else 0
+            s25 = pd.to_numeric(df_s_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_s_filtered.columns else 0
+            
+            tot24 = a24 + s24
+            tot25 = a25 + s25
             
             month_comp_rows.append({
                 'Month': f"M{idx+1:02d} ({label})",
-                'Contract 2024-2025': v24,
-                'Contract 2025-2026': v25,
-                'Diff': v25 - v24
+                'Contract 2024-2025': tot24,
+                'Contract 2025-2026': tot25,
+                'Diff': tot25 - tot24
             })
             
         df_m_comp = pd.DataFrame(month_comp_rows)
@@ -812,7 +831,7 @@ def main():
         fig_m_comp.add_trace(go.Bar(
             x=df_m_comp['Month'],
             y=df_m_comp['Contract 2024-2025'],
-            name='Contract Year 2024-2025 (Jul 24 - Jun 25)',
+            name='Contract Year 2024-2025 (Awarded + Spot)',
             marker=dict(color='#94A3B8', cornerradius=4),
             text=[fmt_num(v) for v in df_m_comp['Contract 2024-2025']],
             textposition='outside',
@@ -821,7 +840,7 @@ def main():
         fig_m_comp.add_trace(go.Bar(
             x=df_m_comp['Month'],
             y=df_m_comp['Contract 2025-2026'],
-            name='Contract Year 2025-2026 (Jul 25 - Jun 26)',
+            name='Contract Year 2025-2026 (Awarded + Spot)',
             marker=dict(color='#0284C7', cornerradius=4),
             text=[fmt_num(v) for v in df_m_comp['Contract 2025-2026']],
             textposition='outside',
@@ -837,7 +856,7 @@ def main():
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(family="Plus Jakarta Sans, sans-serif"),
             xaxis=dict(showgrid=False, tickfont=dict(size=12, weight='bold')),
-            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)', range=[0, y_max_m_comp]),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Total Shipped Volume (TEUs)', range=[0, y_max_m_comp]),
             legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
             margin=dict(l=20, r=20, t=55, b=20)
         )
@@ -847,37 +866,37 @@ def main():
 
         # 2. Trade Lane Performance Comparison (Jul-Jun Contract Year)
         st.markdown("#### 🛣️ Destination Trade Lane Growth (Jul-Jun Contract Cycle)")
-        df_my_dest = df_a_filtered.copy()
-        df_my_dest['Vol_2425'] = df_my_dest[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2425 else 0
-        df_my_dest['Vol_2526'] = df_my_dest[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2526 else 0
+        df_my_dest_a = df_a_filtered.copy()
+        df_my_dest_a['Vol_2425_A'] = df_my_dest_a[valid_m_2425_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2425_a else 0
+        df_my_dest_a['Vol_2526_A'] = df_my_dest_a[valid_m_2526_a].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2526_a else 0
         
-        dest_my_grouped = df_my_dest.groupby(col_dest_a)[['Vol_2425', 'Vol_2526']].sum().reset_index()
-        dest_my_grouped = dest_my_grouped.sort_values(by='Vol_2526', ascending=False)
+        dest_my_grouped = df_my_dest_a.groupby(col_dest_a)[['Vol_2425_A', 'Vol_2526_A']].sum().reset_index()
+        dest_my_grouped = dest_my_grouped.sort_values(by='Vol_2526_A', ascending=False)
 
         max_my_x = max(
-            dest_my_grouped['Vol_2425'].max() if not dest_my_grouped.empty else 100,
-            dest_my_grouped['Vol_2526'].max() if not dest_my_grouped.empty else 100
+            dest_my_grouped['Vol_2425_A'].max() if not dest_my_grouped.empty else 100,
+            dest_my_grouped['Vol_2526_A'].max() if not dest_my_grouped.empty else 100
         )
         x_max_my = max(200, float(max_my_x) * 1.25)
 
         fig_my_bar = go.Figure()
         fig_my_bar.add_trace(go.Bar(
             y=dest_my_grouped[col_dest_a],
-            x=dest_my_grouped['Vol_2425'],
+            x=dest_my_grouped['Vol_2425_A'],
             name='2024-2025 Contract Volume',
             orientation='h',
             marker=dict(color='#94A3B8', cornerradius=4),
-            text=[fmt_num(v) for v in dest_my_grouped['Vol_2425']],
+            text=[fmt_num(v) for v in dest_my_grouped['Vol_2425_A']],
             textposition='outside',
             textfont=dict(size=12, weight='bold', color='#475569')
         ))
         fig_my_bar.add_trace(go.Bar(
             y=dest_my_grouped[col_dest_a],
-            x=dest_my_grouped['Vol_2526'],
+            x=dest_my_grouped['Vol_2526_A'],
             name='2025-2026 Contract Volume',
             orientation='h',
             marker=dict(color='#0284C7', cornerradius=4),
-            text=[fmt_num(v) for v in dest_my_grouped['Vol_2526']],
+            text=[fmt_num(v) for v in dest_my_grouped['Vol_2526_A']],
             textposition='outside',
             textfont=dict(size=12, weight='bold', color='#0369A1')
         ))

@@ -204,6 +204,20 @@ def safe_sum_column(df, col_name):
     else:
         return float(pd.to_numeric(sub, errors='coerce').fillna(0).sum())
 
+# Helper function to guarantee unique column names for PyArrow / Streamlit compatibility
+def make_unique_headers(headers):
+    seen = {}
+    unique = []
+    for h in headers:
+        h_str = str(h).strip()
+        if h_str in seen:
+            seen[h_str] += 1
+            unique.append(f"{h_str}_{seen[h_str]}")
+        else:
+            seen[h_str] = 0
+            unique.append(h_str)
+    return unique
+
 # Cached Data Loader
 @st.cache_data
 def load_data(file_path):
@@ -243,6 +257,7 @@ def load_data(file_path):
             if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('24' in h_str or '25' in h_str or '26' in h_str):
                 month_cols_a.append(h_str)
                 
+    clean_headers_a = make_unique_headers(clean_headers_a)
     df_a = df_a_raw.iloc[header_row_a + 2:].copy()
     df_a.columns = clean_headers_a
     df_a = df_a[df_a.iloc[:, 0].notna()].copy()
@@ -267,7 +282,11 @@ def load_data(file_path):
         if pd.isna(h):
             clean_headers_s.append(f'col_{i}')
         elif isinstance(h, pd.Timestamp) or hasattr(h, 'strftime'):
-            m_str = pd.to_datetime(h).strftime('%b %y')
+            dt = pd.to_datetime(h)
+            if i < 36 and dt.month == 9 and dt.year == 2025:
+                m_str = 'Sep 24'
+            else:
+                m_str = dt.strftime('%b %y')
             clean_headers_s.append(m_str)
             month_cols_s.append(m_str)
         else:
@@ -276,6 +295,7 @@ def load_data(file_path):
             if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('24' in h_str or '25' in h_str or '26' in h_str):
                 month_cols_s.append(h_str)
                 
+    clean_headers_s = make_unique_headers(clean_headers_s)
     df_s = df_s_raw.iloc[header_row_s + 2:].copy()
     df_s.columns = clean_headers_s
     df_s = df_s[df_s.iloc[:, 1].notna() | df_s.iloc[:, 7].notna()].copy()

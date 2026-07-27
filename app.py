@@ -661,34 +661,37 @@ def main():
             
         df_spot_trend = pd.DataFrame(spot_trend)
         
-        max_s_val = df_spot_trend['Spot Volume'].max() if not df_spot_trend.empty else 100
-        y_max_s = max(120, float(max_s_val) * 1.3)
-        
-        fig_spot_area = px.area(
-            df_spot_trend,
-            x='Month',
-            y='Spot Volume',
-            markers=True,
-            color_discrete_sequence=['#F59E0B'],
-            text='Label'
-        )
-        fig_spot_area.update_traces(
-            line=dict(width=4, shape='spline'),
-            fillcolor='rgba(245, 158, 11, 0.15)',
-            marker=dict(size=10, color='#D97706'),
-            textposition='top center',
-            textfont=dict(size=13, weight='bold', color='#92400E')
-        )
-        fig_spot_area.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Plus Jakarta Sans, sans-serif"),
-            xaxis=dict(showgrid=False, tickfont=dict(size=13, weight='bold')),
-            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Spot Volume (TEUs)', range=[0, y_max_s]),
-            height=380,
-            margin=dict(l=20, r=20, t=45, b=20)
-        )
-        st.plotly_chart(fig_spot_area, width='stretch', config={'displayModeBar': False})
+        if df_spot_trend.empty or 'Month' not in df_spot_trend.columns:
+            st.info("ℹ️ No Spot order volume recorded for the selected time horizon scope (Spot tracking started in Jul 2025).")
+        else:
+            max_s_val = df_spot_trend['Spot Volume'].max() if not df_spot_trend.empty else 100
+            y_max_s = max(120, float(max_s_val) * 1.3)
+            
+            fig_spot_area = px.area(
+                df_spot_trend,
+                x='Month',
+                y='Spot Volume',
+                markers=True,
+                color_discrete_sequence=['#F59E0B'],
+                text='Label'
+            )
+            fig_spot_area.update_traces(
+                line=dict(width=4, shape='spline'),
+                fillcolor='rgba(245, 158, 11, 0.15)',
+                marker=dict(size=10, color='#D97706'),
+                textposition='top center',
+                textfont=dict(size=13, weight='bold', color='#92400E')
+            )
+            fig_spot_area.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Plus Jakarta Sans, sans-serif"),
+                xaxis=dict(showgrid=False, tickfont=dict(size=13, weight='bold')),
+                yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Spot Volume (TEUs)', range=[0, y_max_s]),
+                height=380,
+                margin=dict(l=20, r=20, t=45, b=20)
+            )
+            st.plotly_chart(fig_spot_area, width='stretch', config={'displayModeBar': False})
 
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 

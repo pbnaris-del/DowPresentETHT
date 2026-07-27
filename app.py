@@ -303,11 +303,11 @@ def main():
     col_plant_s = find_column(df_s.columns, 'Plant Location', 2)
     col_perf_s = find_column(df_s.columns, 'Perf Center', 12)
 
-    # Monthly Definitions
-    months_2024_2025 = ['Sep 24', 'Oct 24', 'Nov 24', 'Dec 24', 'Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25']
+    # Monthly Definitions (July to June Contract Cycle)
+    months_2024_2025 = ['Jul 24', 'Aug 24', 'Sep 24', 'Oct 24', 'Nov 24', 'Dec 24', 'Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25']
+    months_2025_2026 = ['Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26']
     months_2025 = ['Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25']
     months_2026 = ['Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26']
-    months_2025_2026 = months_2025 + months_2026
     all_historical_months = months_2024_2025 + months_2025_2026
 
     # Sidebar Filter Controls
@@ -322,35 +322,35 @@ def main():
     selected_horizon = st.sidebar.selectbox(
         "Time Horizon Scope",
         options=[
-            '2026 YTD (Current Year)', 
-            '2025 (Jul - Dec)', 
-            'Current Contract (2025-2026)',
-            '📜 Historical Contract (2024-2025)',
-            '🌐 Full Multi-Year Horizon (2024-2026)'
+            '2026 YTD (Jan 26 - Jun 26)', 
+            '2025 H2 (Jul 25 - Dec 25)', 
+            '2025-2026 Contract Year (Jul 25 - Jun 26)',
+            '📜 2024-2025 Contract Year (Jul 24 - Jun 25)',
+            '🌐 Full 24-Month Horizon (Jul 24 - Jun 26)'
         ],
         index=0
     )
     
-    if selected_horizon == '2026 YTD (Current Year)':
+    if selected_horizon == '2026 YTD (Jan 26 - Jun 26)':
         active_months = months_2026
         target_year_label = "2026 YTD"
         month_factor = 6.0 / 12.0
-    elif selected_horizon == '2025 (Jul - Dec)':
+    elif selected_horizon == '2025 H2 (Jul 25 - Dec 25)':
         active_months = months_2025
-        target_year_label = "2025"
+        target_year_label = "2025 H2"
         month_factor = 6.0 / 12.0
-    elif selected_horizon == 'Current Contract (2025-2026)':
+    elif selected_horizon == '2025-2026 Contract Year (Jul 25 - Jun 26)':
         active_months = months_2025_2026
-        target_year_label = "2025-2026"
+        target_year_label = "2025-2026 Contract Year"
         month_factor = 1.0
-    elif selected_horizon == '📜 Historical Contract (2024-2025)':
+    elif selected_horizon == '📜 2024-2025 Contract Year (Jul 24 - Jun 25)':
         active_months = months_2024_2025
-        target_year_label = "2024-2025 Contract"
-        month_factor = 10.0 / 12.0
+        target_year_label = "2024-2025 Contract Year"
+        month_factor = 1.0
     else:
         active_months = all_historical_months
-        target_year_label = "2024-2026 Full Horizon"
-        month_factor = 22.0 / 12.0
+        target_year_label = "Full 24-Month Horizon"
+        month_factor = 24.0 / 12.0
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔍 Trade Lane Filters")
@@ -470,7 +470,7 @@ def main():
     tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Comparative Performance", 
         "⚡ Spot & Hierarchy Analysis", 
-        "📜 Multi-Year Contract Analysis (2024-2026)",
+        "📜 Multi-Year Contract Analysis (Jul - Jun)",
         "📋 Trade Lane Matrix & Data"
     ])
 
@@ -724,13 +724,13 @@ def main():
             st.info("No active volume recorded for selected filters to build hierarchy.")
 
     # ----------------------------------------------------
-    # TAB 3: Multi-Year Contract Analysis (2024-2026)
+    # TAB 3: Multi-Year Contract Analysis (Jul - Jun)
     # ----------------------------------------------------
     with tab3:
-        st.markdown(f"#### 📜 Historical Contract vs Current Contract Performance Comparison ({origin_label})")
-        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative analysis of previous contract cycle (Sep 2024 - Jun 2025) vs current contract cycle (Jul 2025 - Jun 2026).</div>", unsafe_allow_html=True)
+        st.markdown(f"#### 📜 Contract Year Performance Comparison: Jul-Jun Cycle ({origin_label})")
+        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative volume performance across 12-Month Contract Cycles (July to June): <b>Contract Year 2024-2025</b> vs <b>Contract Year 2025-2026</b>.</div>", unsafe_allow_html=True)
 
-        # Calculate Contract Cycle Volumes
+        # Calculate Contract Cycle Volumes (July to June 12-Month Cycle)
         valid_m_2425 = [m for m in months_2024_2025 if m in df_a_filtered.columns]
         valid_m_2526 = [m for m in months_2025_2026 if m in df_a_filtered.columns]
 
@@ -744,18 +744,18 @@ def main():
         with mcol1:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-header"><span class="kpi-title">2024-2025 Contract</span><div class="kpi-icon icon-award">📜</div></div>
+                <div class="kpi-header"><span class="kpi-title">Contract Year 24-25</span><div class="kpi-icon icon-award">📜</div></div>
                 <div class="kpi-value">{fmt_num(vol_2425_tot)}</div>
-                <div class="kpi-subtext">Historical Actual Shipped (TEUs)</div>
+                <div class="kpi-subtext">Jul 2024 - Jun 2025 (TEUs)</div>
             </div>
             """, unsafe_allow_html=True)
             
         with mcol2:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-header"><span class="kpi-title">2025-2026 Contract</span><div class="kpi-icon icon-actual">🚚</div></div>
+                <div class="kpi-header"><span class="kpi-title">Contract Year 25-26</span><div class="kpi-icon icon-actual">🚚</div></div>
                 <div class="kpi-value">{fmt_num(vol_2526_tot)}</div>
-                <div class="kpi-subtext">Current Actual Shipped (TEUs)</div>
+                <div class="kpi-subtext">Jul 2025 - Jun 2026 (TEUs)</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -773,7 +773,7 @@ def main():
         with mcol4:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-header"><span class="kpi-title">Contract Growth Rate</span><div class="kpi-icon icon-rate">🚀</div></div>
+                <div class="kpi-header"><span class="kpi-title">Contract YoY Growth</span><div class="kpi-icon icon-rate">🚀</div></div>
                 <div class="kpi-value">{int(round(growth_pct))}%</div>
                 <div class="kpi-subtext">Year-over-Year Expansion</div>
             </div>
@@ -781,7 +781,73 @@ def main():
 
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
 
-        # Multi-Year Chart Row: Destination Trade Lane Contract Growth
+        # 1. Month-by-Month Contract Year Progression (Jul to Jun)
+        st.markdown("#### 📅 Month-by-Month Contract Progression Comparison (Jul to Jun)")
+        
+        m_labels = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+        month_comp_rows = []
+        
+        for idx, label in enumerate(m_labels):
+            m24 = months_2024_2025[idx]
+            m25 = months_2025_2026[idx]
+            
+            v24 = pd.to_numeric(df_a_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_a_filtered.columns else 0
+            v25 = pd.to_numeric(df_a_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_a_filtered.columns else 0
+            
+            month_comp_rows.append({
+                'Month': f"M{idx+1:02d} ({label})",
+                'Contract 2024-2025': v24,
+                'Contract 2025-2026': v25,
+                'Diff': v25 - v24
+            })
+            
+        df_m_comp = pd.DataFrame(month_comp_rows)
+        
+        max_m_comp_y = max(
+            df_m_comp['Contract 2024-2025'].max() if not df_m_comp.empty else 100,
+            df_m_comp['Contract 2025-2026'].max() if not df_m_comp.empty else 100
+        )
+        y_max_m_comp = max(180, float(max_m_comp_y) * 1.25)
+
+        fig_m_comp = go.Figure()
+        fig_m_comp.add_trace(go.Bar(
+            x=df_m_comp['Month'],
+            y=df_m_comp['Contract 2024-2025'],
+            name='Contract Year 2024-2025 (Jul 24 - Jun 25)',
+            marker=dict(color='#94A3B8', cornerradius=4),
+            text=[fmt_num(v) for v in df_m_comp['Contract 2024-2025']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#475569')
+        ))
+        fig_m_comp.add_trace(go.Bar(
+            x=df_m_comp['Month'],
+            y=df_m_comp['Contract 2025-2026'],
+            name='Contract Year 2025-2026 (Jul 25 - Jun 26)',
+            marker=dict(color='#0284C7', cornerradius=4),
+            text=[fmt_num(v) for v in df_m_comp['Contract 2025-2026']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#0369A1')
+        ))
+
+        fig_m_comp.update_layout(
+            barmode='group',
+            bargap=0.2,
+            bargroupgap=0.08,
+            height=400,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Plus Jakarta Sans, sans-serif"),
+            xaxis=dict(showgrid=False, tickfont=dict(size=12, weight='bold')),
+            yaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Volume (TEUs)', range=[0, y_max_m_comp]),
+            legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
+            margin=dict(l=20, r=20, t=55, b=20)
+        )
+        st.plotly_chart(fig_m_comp, width='stretch', config={'displayModeBar': False})
+
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+
+        # 2. Trade Lane Performance Comparison (Jul-Jun Contract Year)
+        st.markdown("#### 🛣️ Destination Trade Lane Growth (Jul-Jun Contract Cycle)")
         df_my_dest = df_a_filtered.copy()
         df_my_dest['Vol_2425'] = df_my_dest[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2425 else 0
         df_my_dest['Vol_2526'] = df_my_dest[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2526 else 0
@@ -825,11 +891,10 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(family="Plus Jakarta Sans, sans-serif"),
-            title=dict(text="<b>Trade Lane Performance Comparison: 2024-2025 Contract vs 2025-2026 Contract</b>", font=dict(size=15, color="#0F172A")),
             xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Actual Shipped Volume (TEUs)', range=[0, x_max_my]),
             yaxis=dict(autorange="reversed", tickfont=dict(size=12, weight='bold')),
             legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
-            margin=dict(l=10, r=50, t=55, b=10)
+            margin=dict(l=10, r=50, t=45, b=10)
         )
         st.plotly_chart(fig_my_bar, width='stretch', config={'displayModeBar': False})
 

@@ -194,6 +194,16 @@ def find_column(df_columns, target_name, fallback_idx=None):
         return df_columns[fallback_idx]
     return target_name
 
+# Helper function to safely convert and sum column values (handles single Series & multi-column DataFrames)
+def safe_sum_column(df, col_name):
+    if df is None or df.empty or col_name not in df.columns:
+        return 0.0
+    sub = df[col_name]
+    if isinstance(sub, pd.DataFrame):
+        return float(sub.apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum())
+    else:
+        return float(pd.to_numeric(sub, errors='coerce').fillna(0).sum())
+
 # Cached Data Loader
 @st.cache_data
 def load_data(file_path):
@@ -488,8 +498,8 @@ def main():
         monthly_award_target_overall = award_target_volume / len(valid_active_m_a) if valid_active_m_a else 0
         
         for m in valid_active_m_a:
-            act_m = pd.to_numeric(df_a_filtered[m], errors='coerce').fillna(0).sum()
-            spot_m = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum() if m in df_s_filtered.columns else 0
+            act_m = safe_sum_column(df_a_filtered, m)
+            spot_m = safe_sum_column(df_s_filtered, m)
             
             monthly_data.append({
                 'Month': m,
@@ -659,7 +669,7 @@ def main():
         
         spot_trend = []
         for m in valid_active_m_s:
-            v = pd.to_numeric(df_s_filtered[m], errors='coerce').fillna(0).sum()
+            v = safe_sum_column(df_s_filtered, m)
             spot_trend.append({'Month': m, 'Spot Volume': v, 'Label': fmt_num(v)})
             
         df_spot_trend = pd.DataFrame(spot_trend)
@@ -803,11 +813,11 @@ def main():
             m24 = months_2024_2025[idx]
             m25 = months_2025_2026[idx]
             
-            a24 = pd.to_numeric(df_a_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_a_filtered.columns else 0
-            s24 = pd.to_numeric(df_s_filtered[m24], errors='coerce').fillna(0).sum() if m24 in df_s_filtered.columns else 0
+            a24 = safe_sum_column(df_a_filtered, m24)
+            s24 = safe_sum_column(df_s_filtered, m24)
             
-            a25 = pd.to_numeric(df_a_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_a_filtered.columns else 0
-            s25 = pd.to_numeric(df_s_filtered[m25], errors='coerce').fillna(0).sum() if m25 in df_s_filtered.columns else 0
+            a25 = safe_sum_column(df_a_filtered, m25)
+            s25 = safe_sum_column(df_s_filtered, m25)
             
             tot24 = a24 + s24
             tot25 = a25 + s25

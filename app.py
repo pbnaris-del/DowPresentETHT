@@ -325,8 +325,8 @@ def main():
             '2026 YTD (Jan 26 - Jun 26)', 
             '2025 H2 (Jul 25 - Dec 25)', 
             '2025-2026 Contract Year (Jul 25 - Jun 26)',
-            '📜 2024-2025 Contract Year (Jul 24 - Jun 25)',
-            '🌐 Full 24-Month Horizon (Jul 24 - Jun 26)'
+            '2024-2025 Contract Year (Jul 24 - Jun 25)',
+            'Full 24-Month Horizon (Jul 24 - Jun 26)'
         ],
         index=0
     )
@@ -334,23 +334,22 @@ def main():
     if selected_horizon == '2026 YTD (Jan 26 - Jun 26)':
         active_months = months_2026
         target_year_label = "2026 YTD"
-        month_factor = 6.0 / 12.0
     elif selected_horizon == '2025 H2 (Jul 25 - Dec 25)':
         active_months = months_2025
         target_year_label = "2025 H2"
-        month_factor = 6.0 / 12.0
     elif selected_horizon == '2025-2026 Contract Year (Jul 25 - Jun 26)':
         active_months = months_2025_2026
         target_year_label = "2025-2026 Contract Year"
-        month_factor = 1.0
-    elif selected_horizon == '📜 2024-2025 Contract Year (Jul 24 - Jun 25)':
+    elif selected_horizon == '2024-2025 Contract Year (Jul 24 - Jun 25)':
         active_months = months_2024_2025
         target_year_label = "2024-2025 Contract Year"
-        month_factor = 1.0
     else:
         active_months = all_historical_months
         target_year_label = "Full 24-Month Horizon"
-        month_factor = 24.0 / 12.0
+
+    # Dynamically compute month factor based on actual data columns present
+    valid_data_m = [m for m in active_months if m in df_a.columns]
+    month_factor = (len(valid_data_m) / 12.0) if valid_data_m else 1.0
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔍 Trade Lane Filters")

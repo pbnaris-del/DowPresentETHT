@@ -230,7 +230,7 @@ def load_data(file_path):
         else:
             h_str = str(h).strip()
             clean_headers_a.append(h_str)
-            if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('25' in h_str or '26' in h_str):
+            if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('24' in h_str or '25' in h_str or '26' in h_str):
                 month_cols_a.append(h_str)
                 
     df_a = df_a_raw.iloc[header_row_a + 2:].copy()
@@ -263,7 +263,7 @@ def load_data(file_path):
         else:
             h_str = str(h).strip()
             clean_headers_s.append(h_str)
-            if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('25' in h_str or '26' in h_str):
+            if any(m in h_str for m in ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) and ('24' in h_str or '25' in h_str or '26' in h_str):
                 month_cols_s.append(h_str)
                 
     df_s = df_s_raw.iloc[header_row_s + 2:].copy()
@@ -277,7 +277,9 @@ def load_data(file_path):
 
 # Main Dashboard Function
 def main():
-    file_path = 'DOW LOADS REPORTING 2025 TO 2026 (R1) 8.xlsx'
+    updated_file = 'DOW LOADS REPORTING 2025 TO 2026 (R1) 8 (UPDATED).xlsx'
+    default_file = 'DOW LOADS REPORTING 2025 TO 2026 (R1) 8.xlsx'
+    file_path = updated_file if os.path.exists(updated_file) else default_file
     
     df_a, df_s = load_data(file_path)
     
@@ -302,9 +304,11 @@ def main():
     col_perf_s = find_column(df_s.columns, 'Perf Center', 12)
 
     # Monthly Definitions
+    months_2024_2025 = ['Sep 24', 'Oct 24', 'Nov 24', 'Dec 24', 'Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25']
     months_2025 = ['Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25']
     months_2026 = ['Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26']
-    all_months = months_2025 + months_2026
+    months_2025_2026 = months_2025 + months_2026
+    all_historical_months = months_2024_2025 + months_2025_2026
 
     # Sidebar Filter Controls
     st.sidebar.markdown("### ⚙️ Scope & Origin Filters")
@@ -317,7 +321,13 @@ def main():
     
     selected_horizon = st.sidebar.selectbox(
         "Time Horizon Scope",
-        options=['2026 YTD (Current Year)', '2025 (Jul - Dec)', 'Full Contract (2025-2026)'],
+        options=[
+            '2026 YTD (Current Year)', 
+            '2025 (Jul - Dec)', 
+            'Current Contract (2025-2026)',
+            '📜 Historical Bidding (2024-2025)',
+            '🌐 Full Multi-Year Horizon (2024-2026)'
+        ],
         index=0
     )
     
@@ -329,10 +339,18 @@ def main():
         active_months = months_2025
         target_year_label = "2025"
         month_factor = 6.0 / 12.0
-    else:
-        active_months = all_months
+    elif selected_horizon == 'Current Contract (2025-2026)':
+        active_months = months_2025_2026
         target_year_label = "2025-2026"
         month_factor = 1.0
+    elif selected_horizon == '📜 Historical Bidding (2024-2025)':
+        active_months = months_2024_2025
+        target_year_label = "2024-2025 Bidding"
+        month_factor = 10.0 / 12.0
+    else:
+        active_months = all_historical_months
+        target_year_label = "2024-2026 Full Horizon"
+        month_factor = 22.0 / 12.0
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔍 Trade Lane Filters")
@@ -449,9 +467,10 @@ def main():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Main Content Tabs
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Comparative Performance", 
         "⚡ Spot & Hierarchy Analysis", 
+        "📜 Multi-Year Bidding Analysis (2024-2026)",
         "📋 Trade Lane Matrix & Data"
     ])
 
@@ -702,9 +721,119 @@ def main():
             st.info("No active volume recorded for selected filters to build hierarchy.")
 
     # ----------------------------------------------------
-    # TAB 3: Detailed Matrix & Data Tables
+    # TAB 3: Multi-Year Bidding Analysis (2024-2026)
     # ----------------------------------------------------
     with tab3:
+        st.markdown(f"#### 📜 Historical Bidding vs Current Contract Performance Comparison ({origin_label})")
+        st.markdown("<div style='color: #64748B; font-size: 0.9rem; margin-top: -8px; margin-bottom: 20px;'>Comparative analysis of previous bidding cycle (Sep 2024 - Jun 2025) vs current contract cycle (Jul 2025 - Jun 2026).</div>", unsafe_allow_html=True)
+
+        # Calculate Bidding Cycle Volumes
+        valid_m_2425 = [m for m in months_2024_2025 if m in df_a_filtered.columns]
+        valid_m_2526 = [m for m in months_2025_2026 if m in df_a_filtered.columns]
+
+        vol_2425_tot = df_a_filtered[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2425 else 0
+        vol_2526_tot = df_a_filtered[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum().sum() if valid_m_2526 else 0
+        growth_vol = vol_2526_tot - vol_2425_tot
+        growth_pct = (growth_vol / vol_2425_tot * 100) if vol_2425_tot > 0 else 0
+
+        # Multi-Year Summary Cards
+        mcol1, mcol2, mcol3, mcol4 = st.columns(4)
+        with mcol1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-header"><span class="kpi-title">2024-2025 Bidding</span><div class="kpi-icon icon-award">📜</div></div>
+                <div class="kpi-value">{fmt_num(vol_2425_tot)}</div>
+                <div class="kpi-subtext">Historical Actual Shipped (TEUs)</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mcol2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-header"><span class="kpi-title">2025-2026 Contract</span><div class="kpi-icon icon-actual">🚚</div></div>
+                <div class="kpi-value">{fmt_num(vol_2526_tot)}</div>
+                <div class="kpi-subtext">Current Actual Shipped (TEUs)</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mcol3:
+            growth_color = "#059669" if growth_vol >= 0 else "#DC2626"
+            growth_sign = "+" if growth_vol >= 0 else ""
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-header"><span class="kpi-title">Volume Growth</span><div class="kpi-icon icon-spot">📈</div></div>
+                <div class="kpi-value" style="color: {growth_color};">{growth_sign}{fmt_num(growth_vol)}</div>
+                <div class="kpi-subtext">TEU Volume Expansion ({growth_sign}{int(round(growth_pct))}%)</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mcol4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-header"><span class="kpi-title">Bidding Growth Rate</span><div class="kpi-icon icon-rate">🚀</div></div>
+                <div class="kpi-value">{int(round(growth_pct))}%</div>
+                <div class="kpi-subtext">Year-over-Year Expansion</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+
+        # Multi-Year Chart Row: Destination Trade Lane Bidding Growth
+        df_my_dest = df_a_filtered.copy()
+        df_my_dest['Vol_2425'] = df_my_dest[valid_m_2425].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2425 else 0
+        df_my_dest['Vol_2526'] = df_my_dest[valid_m_2526].apply(pd.to_numeric, errors='coerce').fillna(0).sum(axis=1) if valid_m_2526 else 0
+        
+        dest_my_grouped = df_my_dest.groupby(col_dest_a)[['Vol_2425', 'Vol_2526']].sum().reset_index()
+        dest_my_grouped = dest_my_grouped.sort_values(by='Vol_2526', ascending=False)
+
+        max_my_x = max(
+            dest_my_grouped['Vol_2425'].max() if not dest_my_grouped.empty else 100,
+            dest_my_grouped['Vol_2526'].max() if not dest_my_grouped.empty else 100
+        )
+        x_max_my = max(200, float(max_my_x) * 1.25)
+
+        fig_my_bar = go.Figure()
+        fig_my_bar.add_trace(go.Bar(
+            y=dest_my_grouped[col_dest_a],
+            x=dest_my_grouped['Vol_2425'],
+            name='2024-2025 Bidding Volume',
+            orientation='h',
+            marker=dict(color='#94A3B8', cornerradius=4),
+            text=[fmt_num(v) for v in dest_my_grouped['Vol_2425']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#475569')
+        ))
+        fig_my_bar.add_trace(go.Bar(
+            y=dest_my_grouped[col_dest_a],
+            x=dest_my_grouped['Vol_2526'],
+            name='2025-2026 Contract Volume',
+            orientation='h',
+            marker=dict(color='#0284C7', cornerradius=4),
+            text=[fmt_num(v) for v in dest_my_grouped['Vol_2526']],
+            textposition='outside',
+            textfont=dict(size=12, weight='bold', color='#0369A1')
+        ))
+
+        fig_my_bar.update_layout(
+            barmode='group',
+            bargap=0.2,
+            bargroupgap=0.1,
+            height=380,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Plus Jakarta Sans, sans-serif"),
+            title=dict(text="<b>Trade Lane Performance Comparison: 2024-2025 Bidding vs 2025-2026 Contract</b>", font=dict(size=15, color="#0F172A")),
+            xaxis=dict(showgrid=True, gridcolor='#E2E8F0', title='Actual Shipped Volume (TEUs)', range=[0, x_max_my]),
+            yaxis=dict(autorange="reversed", tickfont=dict(size=12, weight='bold')),
+            legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(size=12)),
+            margin=dict(l=10, r=50, t=55, b=10)
+        )
+        st.plotly_chart(fig_my_bar, width='stretch', config={'displayModeBar': False})
+
+    # ----------------------------------------------------
+    # TAB 4: Detailed Matrix & Data Tables
+    # ----------------------------------------------------
+    with tab4:
         st.markdown(f"#### 📋 Awarded Lanes Detailed Contract Matrix ({origin_label})")
         display_cols_a = [col_plant_a, col_country_a, col_dest_a, col_dest_port_a, col_perf_a, col_forecast_a, col_eway_teu_a] + valid_active_m_a
         df_a_display = df_a_filtered[display_cols_a].copy()
